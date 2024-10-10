@@ -1,0 +1,6 @@
+transformers
+datasets
+accelerate
+wandb
+tqdm
+evaluate
