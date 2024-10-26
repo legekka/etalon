@@ -94,7 +94,7 @@ def load_trainer_state(checkpoint_path: str):
     Returns:
         dict: The trainer_state.json as object, with the learning rate from the last log entry.
     """
-    with open(checkpoint_path, 'r') as f:
+    with open(os.path.join(checkpoint_path, 'trainer_state.json'), 'r') as f:
         trainer_state = json.load(f)
     
     # we need to get the last learning rate for the optimizer from the log history. Not all entry contains a learning rate key, so we need to find the last one
