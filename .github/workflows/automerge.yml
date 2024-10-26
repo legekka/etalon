@@ -1,0 +1,43 @@
+name: Auto-merge main commits to all branches
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '__pycache__/'
+      - 'outputs/'
+      - 'wandb/'
+      - 'data/*'
+      - 'models/*'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '__pycache__/'
+      - 'outputs/'
+      - 'wandb/'
+      - 'data/*'
+      - 'models/*'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Merge to T12
+        uses: mtanzi/action-automerge@v1
+        id: merge-T12
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          source: 'main'
+          target: 'T12'
+
+      - name: Merge to hu-DeBERTa-v2
+        uses: mtanzi/action-automerge@v1
+        id: merge-hu-DeBERTa-v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          source: 'main'
+          target: 'hu-DeBERTa-v2'
