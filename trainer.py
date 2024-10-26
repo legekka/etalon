@@ -4,7 +4,7 @@ import wandb
 from transformers import AutoModelForImageClassification, AutoImageProcessor
 from transformers import TrainingArguments, DefaultDataCollator, Trainer
 
-from modules.utils import load_dataset, TrainerInit, get_class_weights, load_trainer_state, calculate_epochs
+from modules.utils import load_dataset, TrainerInit, load_trainer_state, calculate_epochs
 from modules.metrics import F1
 from modules.custom_transforms import ImageClassificationTransform
 
@@ -46,14 +46,6 @@ def main():
     if accelerator.is_main_process:    
         print(f"Train dataset size: {len(train_dataset)}")
         print(f"Eval dataset size: {len(eval_dataset)}")
-
-    # Calculating class weights
-
-    class_weights = get_class_weights(train_dataset)
-    loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=class_weights.to(device))
-
-    if accelerator.is_main_process:
-        print('Class weights calculated:', class_weights)
 
     # Setting up Trainer
 

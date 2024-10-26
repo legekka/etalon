@@ -1,12 +1,41 @@
 import os
 import json
 import torch
+import numpy as np
 from accelerate import Accelerator
 from datasets import load_dataset as load_dataset_hf
 
 from modules.config import Config
 
 import argparse
+
+def get_class_weights(dataset, num_classes=None, label_column='label'):
+    """
+    Computes the class weights for a given dataset.
+
+    Args:
+        dataset (Dataset): A Hugging Face Dataset object.
+        num_classes (int): The number of classes in the dataset.
+        label_column (str): The column name containing the labels.
+
+    Returns:
+        torch.Tensor: 1D tensor containing the class weights.
+    """
+    labels = dataset[label_column]
+    
+    if num_classes is None:
+        num_classes = len(set(labels))
+
+    class_counts = np.zeros(num_classes)
+
+    class_counts[class_counts == 0] = 1
+
+    class_weights = np.sum(class_counts) / class_counts
+    class_weights = torch.tensor(class_weights, dtype=torch.float32)
+    class_weights = class_weights / class_weights.mean()
+    class_weights = torch.clamp(class_weights, min=0.05, max=5)
+
+    return class_weights
 
 
 def load_dataset(data_dir: str, split: str):
