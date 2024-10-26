@@ -13,7 +13,7 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(config.model, use_fast=True)
 
-    transforms = TokenizationTransform(tokenizer, config.max_length)
+    transforms = TokenizationTransform(tokenizer, config.max_seq_length)
 
     # Loading the model
     if args.resume is not None:
