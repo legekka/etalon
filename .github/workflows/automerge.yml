@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        
+
       - name: Merge to T12
         uses: mtanzi/action-automerge@v1
         id: merge-T12
@@ -33,7 +33,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           source: 'main'
           target: 'T12'
-          
+
       - name: Merge to hu-DeBERTa-v2
         uses: mtanzi/action-automerge@v1
         id: merge-hu-DeBERTa-v2
