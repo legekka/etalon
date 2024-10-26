@@ -3,8 +3,9 @@ import wandb
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 from transformers import TrainingArguments, DataCollatorForLanguageModeling, Trainer
 
-from modules.utils import load_dataset, TrainerInit, load_trainer_state, calculate_epochs
+from modules.utils import TrainerInit, load_trainer_state, calculate_epochs
 from modules.custom_transforms import TokenizationTransform
+from datasets import load_dataset
 
 
 def main():
@@ -29,7 +30,7 @@ def main():
 
     # Creating datasets
     
-    dataset = load_dataset(config.train_dataset, 'train')
+    dataset = load_dataset(path=config.train_dataset["path"], name=config.train_dataset["name"], split=config.train_dataset["split"])
     
     train_test_split = dataset.train_test_split(
         test_size=config.eval_dataset_split_size,
