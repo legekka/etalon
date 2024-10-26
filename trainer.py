@@ -63,8 +63,8 @@ def main():
 
     if accelerator.is_main_process:
         print('--- Hyperparameters ---')
-        for key in config._jsonData.keys():
-            print(f"{key}: {config._jsonData[key]}")
+        for key in config._json_data.keys():
+            print(f"{key}: {config._json_data[key]}")
         print('-----------------------')
 
     # Applying transforms
