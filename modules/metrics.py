@@ -1,5 +1,5 @@
 import torch
-from sklearn.metrics import precision_recall_fscore_support, hamming_loss, accuracy_score
+from sklearn.metrics import precision_recall_fscore_support, hamming_loss, accuracy_score, matthews_corrcoef
 
 def F1(p):
     """
@@ -82,4 +82,24 @@ def F1(p):
         'f1_macro': f1_macro,
         'hamming_loss': hamming_loss_value,
         'subset_accuracy': subset_accuracy,
+    }
+
+def MCC(p):
+    """
+    Computes the Matthews correlation coefficient (MCC) for binary classification tasks and accuracy.
+
+    Args:
+        p (tuple): A tuple containing two elements:
+            - predictions (array-like): The predicted binary labels.
+            - labels (array-like): The ground truth binary labels.
+
+    Returns:
+        dict: A dictionary containing the following evaluation metrics:
+            - 'mcc': Matthews correlation coefficient.
+            - 'accuracy': Accuracy of the model.
+    """
+    predictions, labels = p
+    return {
+        'mcc': matthews_corrcoef(labels, predictions),
+        'accuracy': accuracy_score(labels, predictions)
     }
