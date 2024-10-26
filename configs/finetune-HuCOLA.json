@@ -1,0 +1,23 @@
+{
+    "name": "HuCOLA",
+    "model": "models/hu-deberta-v2-base",
+    "tokenizer": "models/hu-deberta-v2-base",
+    "output_dir": "outputs/finetune-HuCOLA",
+    "train_dataset": "eval_datasets/HuCOLA",
+    "max_seq_length": 64,
+    "batch_size": 16,
+    "gradient_accumulation_steps": 1,
+    "num_epochs": 10,
+    "num_workers": 4,
+    "learning_rate": 1e-5,
+    "eta_min": 1e-6,
+    "warmup_steps": 300,
+    "optimizer": "adamw_torch",
+    "scheduler": "cosine",
+    "logging_steps": 20,
+    "wandb": {
+        "project": "hucola-hu-deberta-v2",
+        "name": "finetune-HuCOLA",
+        "tags": ["finetune", "HuCOLA"]
+    }
+}

@@ -1,0 +1,24 @@
+{
+    "name": "hubert-HuCOLA",
+    "model": "SZTAKI-HLT/hubert-base-cc",
+    "tokenizer": "SZTAKI-HLT/hubert-base-cc",
+    "output_dir": "outputs/hubert-HuCOLA",
+    "train_dataset": "eval_datasets/HuCOLA",
+    "max_seq_length": 128,
+    "batch_size": 16,
+    "gradient_accumulation_steps": 1,
+    "max_steps": 1000,
+    "save_steps": 150,
+    "num_workers": 0,
+    "learning_rate": 1e-5,
+    "eta_min": 1e-7,
+    "warmup_steps": 25,
+    "optimizer": "adamw_torch",
+    "scheduler": "cosine",
+    "logging_steps": 5,
+    "wandb": {
+        "project": "hubert-HuCOLA",
+        "name": "finetune-HuCOLA",
+        "tags": ["finetune", "HuCOLA"]
+    }
+}
