@@ -142,8 +142,11 @@ def main():
         wandb.config.update(config._json_data)
         wandb.watch(model)
 
-    model, train_dataset, eval_dataset, trainer = accelerator.prepare(
-        model, train_dataset, eval_dataset, trainer
+    trainer.create_optimizer()
+    optimizer = trainer.optimizer
+
+    model, optimizer, train_dataset, eval_dataset, trainer = accelerator.prepare(
+        model, optimizer, train_dataset, eval_dataset, trainer
     )
 
     trainer.train()
