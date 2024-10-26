@@ -110,7 +110,7 @@ class Config:
         self.mlm_probability = self._json_data.get("mlm_probability", 0.15)
 
         self.optimizer = self._json_data.get("optimizer", "adamw_torch")
-        self.scheduler = self._json_data.get("scheduler", "WarmupThenCosineAnnealingLR")
+        self.scheduler = self._json_data.get("scheduler", "linear")
 
         # Process wandb configuration
         wandb_config = self._json_data.get("wandb")
