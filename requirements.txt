@@ -4,3 +4,5 @@ accelerate
 wandb
 tqdm
 evaluate
+pillow
+parquet
