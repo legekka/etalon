@@ -49,8 +49,8 @@ def main():
 
     # Applying transforms
 
-    train_dataset = train_dataset.set_transform(transforms.tokenize_text)
-    eval_dataset = eval_dataset.set_transform(transforms.tokenize_text)
+    train_dataset.set_transform(transforms.train)
+    eval_dataset.set_transform(transforms.evaluation)
 
     # Setting up Trainer
 
