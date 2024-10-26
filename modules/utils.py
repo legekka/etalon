@@ -1,4 +1,5 @@
 import os
+import json
 import torch
 from accelerate import Accelerator
 from datasets import load_dataset as load_dataset_hf
@@ -54,6 +55,52 @@ def load_dataset(data_dir: str, split: str):
 
         return dataset
 
+def load_trainer_state(checkpoint_path: str):
+    """
+    Loads the trainer state from a checkpoint file, for resuming training with the correct parameters.
+
+    Args:
+        checkpoint_path (str): The path to the checkpoint file.
+
+    Returns:
+        dict: The trainer_state.json as object, with the learning rate from the last log entry.
+    """
+    with open(checkpoint_path, 'r') as f:
+        trainer_state = json.load(f)
+    
+    # we need to get the last learning rate for the optimizer from the log history. Not all entry contains a learning rate key, so we need to find the last one
+    for entry in reversed(trainer_state['log_history']):
+        if 'learning_rate' in entry:
+            trainer_state['learning_rate'] = entry['learning_rate']
+            break
+    
+    return trainer_state
+
+def calculate_epochs(global_step: int, max_steps: int, dataset_size: int, batch_size: int, gradient_accumulation_steps: int, num_processes: int):
+    """
+    Calculates the number of epochs to train based on the global step, max steps, dataset size, batch size, gradient accumulation steps, and number of processes.
+
+    Args:
+        global_step (int): The current global step.
+        max_steps (int): The maximum number of steps to train for.
+        dataset_size (int): The size of the training dataset.
+        batch_size (int): The batch size.
+        gradient_accumulation_steps (int): The number of gradient accumulation steps.
+        num_processes (int): The number of processes used for distributed training.
+
+    Returns:
+        float: The number of epochs to train for.
+    """
+    # Calculate the effective batch size
+    effective_batch_size = batch_size * gradient_accumulation_steps * num_processes
+
+    # Calculate the number of steps per epoch
+    steps_per_epoch = dataset_size / effective_batch_size
+
+    # Calculate the number of epochs
+    num_epochs = (max_steps - global_step) / steps_per_epoch
+
+    return num_epochs
 
 def TrainerInit():
     if os.name == 'nt':
