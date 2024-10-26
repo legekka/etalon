@@ -13,13 +13,16 @@ class ImageClassificationTransform:
         
         self._train_transforms = T.Compose([
             T.Resize(self.size),
+            T.RandomHorizontalFlip(),
+            T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
             T.RandomAffine(
                 degrees=15, 
                 translate=(0.1, 0.1),
-                scale=(0.75, 1.1),
+                scale=(0.75, 1.25),
                 shear=None,
                 fill=tuple(np.array(np.array(image_processor.image_mean) * 255).astype(int).tolist())
             ),
+            T.CenterCrop(self.size),
             T.ToTensor(),
             T.Normalize(
                 mean=image_processor.image_mean, 
@@ -29,6 +32,7 @@ class ImageClassificationTransform:
 
         self._val_transforms = T.Compose([
             T.Resize(self.size),
+            T.CenterCrop(self.size),
             T.ToTensor(),
             T.Normalize(
                 mean=image_processor.image_mean, 
