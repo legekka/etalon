@@ -1,3 +1,5 @@
+# TODO: Adapt this script for Etalon
+
 import os
 import argparse
 import torch

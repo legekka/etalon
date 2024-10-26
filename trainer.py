@@ -1,32 +1,31 @@
 import wandb
 
-from transformers import AutoModelForImageClassification, AutoImageProcessor
-from transformers import TrainingArguments, DefaultDataCollator, Trainer
+from transformers import AutoModelForMaskedLM, AutoTokenizer
+from transformers import TrainingArguments, DataCollatorForLanguageModeling, Trainer
 
 from modules.utils import load_dataset, TrainerInit, load_trainer_state, calculate_epochs
-from modules.metrics import F1
-from modules.custom_transforms import ImageClassificationTransform
+from modules.custom_transforms import TokenizationTransform
 
 
 def main():
     # Initializing Trainer Script
     args, config, accelerator, device = TrainerInit()
 
-    image_processor = AutoImageProcessor.from_pretrained(config.model, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(config.model, use_fast=True)
 
-    transforms = ImageClassificationTransform(image_processor, config.num_classes)
+    transforms = TokenizationTransform(tokenizer, config.max_length)
 
     # Loading the model
     if args.resume is not None:
-        model = AutoModelForImageClassification.from_pretrained(args.resume)
+        model = AutoModelForMaskedLM.from_pretrained(args.resume)
     else:
-        model = AutoModelForImageClassification.from_pretrained(config.model)
+        model = AutoModelForMaskedLM.from_pretrained(config.model)
     
     model.to(device)
 
     if accelerator.is_main_process:
         print('Number of parameters:', model.num_parameters())
-        print('Number of classes:', model.config.num_labels)
+        print('Number of tokens:', len(tokenizer))
 
     # Creating datasets
     
@@ -49,8 +48,8 @@ def main():
 
     # Applying transforms
 
-    train_dataset = train_dataset.set_transform(transforms.train)
-    eval_dataset = eval_dataset.set_transform(transforms.evaluation)
+    train_dataset = train_dataset.set_transform(transforms.tokenize_text)
+    eval_dataset = eval_dataset.set_transform(transforms.tokenize_text)
 
     # Setting up Trainer
 
@@ -123,7 +122,10 @@ def main():
             resume_from_checkpoint=args.resume,
         )
 
-    data_collator = DefaultDataCollator()
+    data_collator = DataCollatorForLanguageModeling(
+        tokenizer=tokenizer,
+        mlm_probability=config.mlm_probability,
+    )
 
     trainer = Trainer(
         model=model,
@@ -131,7 +133,6 @@ def main():
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=data_collator,
-        compute_metrics=F1,
         callbacks=[],
     )
 

@@ -8,7 +8,7 @@ import wandb
 import random
 
 from accelerate import Accelerator
-from transformers import Trainer, TrainingArguments, AutoModelForSequenceClassification, AutoTokenizer, get_scheduler, DataCollatorWithPadding, DataCollatorForLanguageModeling
+from transformers import TrainingArguments, AutoModelForSequenceClassification, AutoTokenizer, get_scheduler, DataCollatorWithPadding
 
 from torch.optim import AdamW
 
@@ -16,38 +16,14 @@ from modules.config import Config
 from modules.hulu import load_hucola_dataset
 from modules.scheduler import CosineAnnealingWithWarmupAndEtaMin
 
-import evaluate
-import numpy as np
+from modules.metrics import MCC
+from modules.custom_trainers import BalancedTrainer
+from modules.custom_transforms import TokenizationTransform
+from modules.utils import get_class_weights, calculate_epochs
 
 torch.backends.cudnn.deterministic = True
 torch.manual_seed(42)
 random.seed(42)
-
-accuracy = evaluate.load("accuracy")
-matthews_corrcoef = evaluate.load("matthews_correlation")
-
-def compute_metrics(eval_pred):
-    predictions, labels = eval_pred
-    predictions = np.argmax(predictions, axis=1)
-    acc = accuracy.compute(predictions=predictions, references=labels)
-    mcc = matthews_corrcoef.compute(predictions=predictions, references=labels)
-    return {
-        "accuracy": acc['accuracy'],
-        "mcc": mcc['matthews_correlation']
-    }
-
-def tokenize_text(examples):
-    global tokenizer
-    global config
-    inputs = tokenizer(
-        examples['text'], 
-        padding="max_length",
-        truncation=True,
-        max_length=config.max_seq_length,
-        return_tensors="pt"
-    )
-    inputs["labels"] = examples["label"]
-    return inputs
 
 # if we are on windows, we need to check it, and set the torch backend to gloo
 if os.name == 'nt':
@@ -70,15 +46,17 @@ args = parser.parse_args()
 
 config = Config(args.config_path)
 
-# Initialize the tokenizer
-if args.resume is not None:
-    tokenizer = AutoTokenizer.from_pretrained(args.resume, use_fast=True)
-else:
-    tokenizer = AutoTokenizer.from_pretrained(config.tokenizer, use_fast=True)
-
 if __name__ == '__main__':
     id2label = {0: "Incorrect", 1: "Correct"}
     label2id = {"Incorrect": 0, "Correct": 1}
+
+    # Initialize the tokenizer
+    if args.resume is not None:
+        tokenizer = AutoTokenizer.from_pretrained(args.resume, use_fast=True)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(config.tokenizer, use_fast=True)
+
+    transforms = TokenizationTransform(tokenizer, config.max_length)
 
     # Initialize the model
     if args.resume is not None:
@@ -99,6 +77,7 @@ if __name__ == '__main__':
     dataset = load_hucola_dataset(config.train_dataset)
     train_dataset = dataset["train"]
     eval_dataset = dataset["eval"]
+    num_train_samples = len(train_dataset)
 
     # shuffle the training dataset
     train_dataset = train_dataset.shuffle(seed=42)
@@ -107,19 +86,16 @@ if __name__ == '__main__':
         print(f"Train dataset size: {len(train_dataset)}")
         print(f"Eval dataset size: {len(eval_dataset)}")
 
-    # global loss_fn
-    # class_weights = get_class_weights(train_dataset)
-    # loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights.to(device))
-
-    # if accelerator.is_main_process:
-    #     print('Class weights calculated:', class_weights)
+    # Calculate class weights
+    class_weights = get_class_weights(train_dataset)
+    loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights.to(device))
 
     # Apply tokenization on the fly
-    train_dataset.set_transform(tokenize_text)
-    eval_dataset.set_transform(tokenize_text)
+    train_dataset.set_transform(transforms.tokenize_text)
+    eval_dataset.set_transform(transforms.tokenize_text)
 
     if config.num_epochs is None:
-        num_epochs = config.max_steps * config.batch_size / len(train_dataset) * config.gradient_accumulation_steps * accelerator.num_processes
+        num_epochs = calculate_epochs(0, config.max_steps, num_train_samples, config.batch_size, config.gradient_accumulation_steps, accelerator.num_processes)
     else:
         num_epochs = config.num_epochs
 
@@ -176,7 +152,7 @@ if __name__ == '__main__':
 
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer, pad_to_multiple_of=8)
 
-    trainer = CustomTrainer(
+    trainer = BalancedTrainer(
         model=model,        
         args=training_args,
         #optimizers=(optimizer, scheduler),
@@ -184,9 +160,12 @@ if __name__ == '__main__':
         eval_dataset=eval_dataset,
         data_collator=data_collator,
         tokenizer=tokenizer,
-        compute_metrics=compute_metrics,
+        compute_metrics=MCC,
         callbacks=[]
     )
+
+    # Apply loss function
+    BalancedTrainer.setup_custom_trainer_class_weights(loss_fn)
 
     if args.wandb and accelerator.is_main_process:
         if args.sweep:
@@ -264,14 +243,14 @@ if __name__ == '__main__':
                     max_grad_norm=1.0
                 )
                 
-                trainer = CustomTrainer(
+                trainer = BalancedTrainer(
                     model=model,        
                     args=training_args,
                     train_dataset=train_dataset,
                     eval_dataset=eval_dataset,
                     data_collator=data_collator,
                     tokenizer=tokenizer,
-                    compute_metrics=compute_metrics,
+                    compute_metrics=MCC,
                 )
 
                 # Train with the current configuration
