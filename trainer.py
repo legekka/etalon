@@ -1,4 +1,3 @@
-import torch
 import wandb
 
 from transformers import AutoModelForImageClassification, AutoImageProcessor
@@ -42,15 +41,21 @@ def main():
     
     train_dataset = train_test_split["train"]
     eval_dataset = train_test_split["test"]
+    num_train_samples = len(train_dataset)
 
     if accelerator.is_main_process:    
         print(f"Train dataset size: {len(train_dataset)}")
         print(f"Eval dataset size: {len(eval_dataset)}")
 
+    # Applying transforms
+
+    train_dataset = train_dataset.set_transform(transforms.train)
+    eval_dataset = eval_dataset.set_transform(transforms.evaluation)
+
     # Setting up Trainer
 
     if config.num_epochs is None:
-        num_epochs = calculate_epochs(0, config.max_steps, len(train_dataset), config.batch_size, config.gradient_accumulation_steps, accelerator.num_processes)
+        num_epochs = calculate_epochs(0, config.max_steps, num_train_samples, config.batch_size, config.gradient_accumulation_steps, accelerator.num_processes)
     else:
         num_epochs = config.num_epochs
 
@@ -66,11 +71,6 @@ def main():
         for key in config._json_data.keys():
             print(f"{key}: {config._json_data[key]}")
         print('-----------------------')
-
-    # Applying transforms
-
-    train_dataset = train_dataset.set_transform(transforms.train)
-    eval_dataset = eval_dataset.set_transform(transforms.evaluation)
 
     if args.resume is None:
         training_args = TrainingArguments(
@@ -99,7 +99,7 @@ def main():
     else:
         trainer_state = load_trainer_state(args.resume)
 
-        num_epochs = calculate_epochs(trainer_state["global_step"], config.max_steps, len(train_dataset), config.batch_size, config.gradient_accumulation_steps, accelerator.num_processes)
+        num_epochs = calculate_epochs(trainer_state["global_step"], config.max_steps, num_train_samples, config.batch_size, config.gradient_accumulation_steps, accelerator.num_processes)
 
         training_args = TrainingArguments(
             output_dir=config.output_dir,
