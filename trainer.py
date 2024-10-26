@@ -49,8 +49,8 @@ def main():
 
     # Applying transforms
 
-    train_dataset = train_dataset.set_transform(transforms.train)
-    eval_dataset = eval_dataset.set_transform(transforms.evaluation)
+    train_dataset.set_transform(transforms.train)
+    eval_dataset.set_transform(transforms.evaluation)
 
     # Setting up Trainer
 
