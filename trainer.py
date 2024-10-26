@@ -137,7 +137,7 @@ def main():
 
     if args.wandb and accelerator.is_main_process:
         wandb.init(project=config.wandb['project'], name=config.wandb['name'], tags=config.wandb['tags'])
-        wandb.config.update(config._jsonData)
+        wandb.config.update(config._json_data)
         wandb.watch(model)
 
     model, train_dataset, eval_dataset, trainer = accelerator.prepare(
