@@ -1,8 +1,8 @@
 {
     "name": "large-2048",
-    "model": "models/hu-deberta-v2-large",
-    "tokenizer": "models/hu-deberta-v2-large",
-    "output_dir": "outputs/large-2048",
+    "model": "models/large-1024",
+    "tokenizer": "models/large-1024",
+    "output_dir": "outputs/large",
     "train_dataset": {
         "path": "uonlp/CulturaX",
         "name": "hu",
@@ -19,7 +19,7 @@
     "warmup_steps": 2500,
     "mlm_probability": 0.15,
     "optimizer": "adamw_torch",
-    "scheduler": "cosine",
+    "scheduler": "linear",
     "logging_steps": 10,
     "save_steps": 5000,
     "wandb": {
