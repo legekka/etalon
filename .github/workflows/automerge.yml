@@ -1,4 +1,4 @@
-name: Auto-merge main updates to all branches
+name: Auto-merge main commits to all branches
 
 on:
   push:
